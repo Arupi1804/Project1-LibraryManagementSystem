@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<body>
+    <aside th:fragment="sidebar" class="sidebar">
+        <div class="sidebar-content">
+            <!-- QUẢN LÝ THƯ VIỆN - Available to all authenticated users -->
+            <div class="menu-section">
+                <h3 class="menu-title">QUẢN LÝ THƯ VIỆN</h3>
+                <ul class="menu-list">
+                    <li><a th:href="@{/books}" class="menu-item">Quản lý Sách</a></li>
+                    <li><a th:href="@{/book-copies}" class="menu-item">Quản lý Bản sao</a></li>
+                    <li><a th:href="@{/members}" class="menu-item">Quản lý Độc giả</a></li>
+                </ul>
+            </div>
+
+            <!-- NGHIỆP VỤ THƯ THƯ - Available to all authenticated users -->
+            <div class="menu-section">
+                <h3 class="menu-title">NGHIỆP VỤ THƯ THƯ</h3>
+                <ul class="menu-list">
+                    <li><a th:href="@{/borrow-records}" class="menu-item">Quản lý Mượn/Trả</a></li>
+                    <li><a th:href="@{/reports}" class="menu-item">Báo cáo & Thống kê</a></li>
+                </ul>
+            </div>
+
+            <!-- QUẢN TRỊ HỆ THỐNG - Only for ADMIN -->
+            <div class="menu-section" sec:authorize="hasRole('ADMIN')">
+                <h3 class="menu-title">QUẢN TRỊ HỆ THỐNG</h3>
+                <ul class="menu-list">
+                    <li><a th:href="@{/users}" class="menu-item">Quản lý Người dùng</a></li>
+                    <li><a href="#" class="menu-item">Cấu hình Hệ thống</a></li>
+                </ul>
+            </div>
+        </div>
+    </aside>
+</body>
+
+</html>

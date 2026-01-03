@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý Độc giả - Hệ thống quản lý thư viện</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+
+<body>
+    <!-- Include Navbar -->
+    <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+    <div class="main-layout">
+        <!-- Include Sidebar -->
+        <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="content-header">
+                <h2>Quản lý Độc giả</h2>
+                <a th:href="@{/members/new}" class="btn btn-primary">+ Thêm độc giả mới</a>
+            </div>
+
+            <!-- Success/Error Messages -->
+            <div th:if="${successMessage}" class="alert alert-success">
+                <span th:text="${successMessage}"></span>
+            </div>
+            <div th:if="${errorMessage}" class="alert alert-error">
+                <span th:text="${errorMessage}"></span>
+            </div>
+
+            <!-- Search Form -->
+            <div class="search-box">
+                <form th:action="@{/members}" method="get" class="search-form">
+                    <div class="search-row">
+                        <div class="form-group-inline">
+                            <label>Họ tên:</label>
+                            <input type="text" name="fullName" th:value="${searchFullName}" class="form-control-sm"
+                                placeholder="Tìm theo họ tên">
+                        </div>
+                        <div class="form-group-inline">
+                            <label>Mã độc giả:</label>
+                            <input type="text" name="memberCode" th:value="${searchMemberCode}" class="form-control-sm"
+                                placeholder="Tìm theo mã">
+                        </div>
+                        <div class="form-group-inline">
+                            <label>Email:</label>
+                            <input type="text" name="email" th:value="${searchEmail}" class="form-control-sm"
+                                placeholder="Tìm theo email">
+                        </div>
+                        <div class="form-group-inline">
+                            <label>Số điện thoại:</label>
+                            <input type="text" name="phone" th:value="${searchPhone}" class="form-control-sm"
+                                placeholder="Tìm theo SĐT">
+                        </div>
+                        <div class="form-group-inline">
+                            <label>Trạng thái:</label>
+                            <select name="status" class="form-control-sm">
+                                <option value="">-- Tất cả --</option>
+                                <option th:each="s : ${statuses}" th:value="${s}" th:text="${s}"
+                                    th:selected="${s.toString() == searchStatus}"></option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-search">Tìm kiếm</button>
+                        <a th:href="@{/members}" class="btn btn-secondary">Xóa bộ lọc</a>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Member Table -->
+            <div class="table-container">
+                <table class="data-table" th:if="${!members.empty}">
+                    <thead>
+                        <tr>
+                            <th>Mã độc giả</th>
+                            <th>Họ tên</th>
+                            <th>Email</th>
+                            <th>Số điện thoại</th>
+                            <th>Ngày đăng ký</th>
+                            <th>Trạng thái</th>
+                            <th>Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="member : ${members}">
+                            <td th:text="${member.memberCode}"></td>
+                            <td th:text="${member.fullName}"></td>
+                            <td th:text="${member.email}"></td>
+                            <td th:text="${member.phone}"></td>
+                            <td th:text="${#temporals.format(member.registrationDate, 'dd/MM/yyyy')}"></td>
+                            <td>
+                                <span th:class="'status-badge status-' + ${member.status.toString().toLowerCase()}"
+                                    th:text="${member.status}"></span>
+                            </td>
+                            <td class="action-buttons">
+                                <a th:href="@{/members/{id}/edit(id=${member.id})}" class="btn-action btn-edit">Sửa</a>
+                                <form th:action="@{/members/{id}/delete(id=${member.id})}" method="post"
+                                    style="display: inline;"
+                                    onsubmit="return confirm('Bạn có chắc muốn xóa độc giả này?');">
+                                    <button type="submit" class="btn-action btn-delete">Xóa</button>
+                                </form>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <!-- Empty State -->
+                <div th:if="${members.empty}" class="empty-state">
+                    <p>Không tìm thấy độc giả nào.</p>
+                    <a th:href="@{/members/new}" class="btn btn-primary">Thêm độc giả đầu tiên</a>
+                </div>
+            </div>
+
+            <!-- Pagination -->
+            <div class="pagination" th:if="${totalPages > 0}">
+                <div class="pagination-info">
+                    Hiển thị <strong th:text="${members.size()}"></strong> /
+                    <strong th:text="${totalItems}"></strong> độc giả
+                </div>
+                <div class="pagination-controls">
+                    <a th:href="@{/members(page=${currentPage - 1}, size=${pageSize}, 
+                               fullName=${searchFullName}, memberCode=${searchMemberCode},
+                               email=${searchEmail}, phone=${searchPhone}, status=${searchStatus})}"
+                        th:classappend="${currentPage == 0} ? 'disabled' : ''" class="page-link">« Trước</a>
+
+                    <span th:each="i : ${#numbers.sequence(0, totalPages - 1)}"
+                        th:if="${i >= currentPage - 2 && i <= currentPage + 2}">
+                        <a th:href="@{/members(page=${i}, size=${pageSize}, 
+                                   fullName=${searchFullName}, memberCode=${searchMemberCode},
+                                   email=${searchEmail}, phone=${searchPhone}, status=${searchStatus})}"
+                            th:text="${i + 1}" th:classappend="${i == currentPage} ? 'active' : ''"
+                            class="page-link"></a>
+                    </span>
+
+                    <a th:href="@{/members(page=${currentPage + 1}, size=${pageSize}, 
+                               fullName=${searchFullName}, memberCode=${searchMemberCode},
+                               email=${searchEmail}, phone=${searchPhone}, status=${searchStatus})}"
+                        th:classappend="${currentPage + 1 >= totalPages} ? 'disabled' : ''" class="page-link">Sau »</a>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+
+</html>

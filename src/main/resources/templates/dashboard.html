@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Hệ thống quản lý thư viện</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+
+<body>
+    <!-- Include Navbar -->
+    <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+    <div class="main-layout">
+        <!-- Include Sidebar -->
+        <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="content-header">
+                <h2>Chào mừng, <span th:text="${username}"></span>!</h2>
+                <p class="role-badge" th:text="${role}"></p>
+            </div>
+
+            <div class="dashboard-content">
+                <h3>Thông tin hệ thống</h3>
+                <p>Bạn đang đăng nhập với vai trò: <strong th:text="${role}"></strong></p>
+                <p th:if="${isAdmin}">Bạn có quyền truy cập đầy đủ vào tất cả các chức năng của hệ thống.</p>
+                <p th:unless="${isAdmin}">Bạn có quyền truy cập vào các chức năng quản lý thư viện và nghiệp vụ thủ thư.
+                </p>
+            </div>
+
+            <div class="dashboard-stats" style="margin-top: 40px;">
+                <div class="stat-card">
+                    <h3>Tổng đầu sách</h3>
+                    <p class="stat-number" th:text="${totalBooks}">0</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Độc giả</h3>
+                    <p class="stat-number" th:text="${totalMembers}">0</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Đang mượn</h3>
+                    <p class="stat-number" th:text="${activeBorrows}">0</p>
+                </div>
+                <div class="stat-card" sec:authorize="hasRole('ADMIN')">
+                    <h3>Người dùng</h3>
+                    <p class="stat-number" th:text="${totalUsers}">2</p>
+                </div>
+            </div>
+
+        </main>
+    </div>
+</body>
+
+</html>

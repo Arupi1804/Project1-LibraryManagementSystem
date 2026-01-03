@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chi tiết Người dùng - Hệ thống quản lý thư viện</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <style>
+        .info-section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .info-row {
+            display: flex;
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            font-weight: 600;
+            width: 200px;
+            color: #555;
+        }
+
+        .info-value {
+            flex: 1;
+            color: #333;
+        }
+
+        .password-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .role-badge {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .role-admin {
+            background: #ff6b6b;
+            color: white;
+        }
+
+        .role-librarian {
+            background: #4ecdc4;
+            color: white;
+        }
+
+        .status-active {
+            background: #51cf66;
+            color: white;
+        }
+
+        .status-locked {
+            background: #868e96;
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Include Navbar -->
+    <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+    <div class="main-layout">
+        <!-- Include Sidebar -->
+        <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="content-header">
+                <h2>Chi tiết Người dùng</h2>
+                <a th:href="@{/users}" class="btn btn-secondary">Quay lại</a>
+            </div>
+
+            <!-- Success/Error Messages -->
+            <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+            <div th:if="${errorMessage}" class="alert alert-error" th:text="${errorMessage}"></div>
+
+            <!-- User Information -->
+            <div class="info-section">
+                <h3 style="margin-top: 0;">Thông tin tài khoản</h3>
+
+                <div class="info-row">
+                    <div class="info-label">ID:</div>
+                    <div class="info-value" th:text="${user.id}">1</div>
+                </div>
+
+                <div class="info-row">
+                    <div class="info-label">Username:</div>
+                    <div class="info-value" th:text="${user.username}">admin</div>
+                </div>
+
+                <div class="info-row">
+                    <div class="info-label">Email:</div>
+                    <div class="info-value" th:text="${user.email}">admin@example.com</div>
+                </div>
+
+                <div class="info-row">
+                    <div class="info-label">Mật khẩu:</div>
+                    <div class="info-value">
+                        <span id="passwordDisplay" style="font-family: monospace; user-select: all;">••••••••••••</span>
+                        <button type="button" onclick="togglePasswordDisplay()"
+                            style="margin-left: 10px; padding: 4px 12px; cursor: pointer; border: 1px solid #ddd; background: white; border-radius: 4px;">
+                            <span id="toggleIcon">Hiển thị</span>
+                        </button>
+                        <input type="hidden" id="actualPassword" th:value="${user.password}">
+                    </div>
+                </div>
+
+                <div class="info-row">
+                    <div class="info-label">Vai trò:</div>
+                    <div class="info-value">
+                        <span class="role-badge status-badge"
+                            th:classappend="${user.role.toString() == 'ROLE_ADMIN'} ? 'role-admin' : 'role-librarian'"
+                            th:text="${user.role == T(com.hust.project1.entity.User.UserRole).ROLE_ADMIN ? 'Admin' : 'Librarian'}">
+                            Admin
+                        </span>
+                    </div>
+                </div>
+
+                <div class="info-row">
+                    <div class="info-label">Trạng thái:</div>
+                    <div class="info-value">
+                        <span class="status-badge"
+                            th:classappend="${user.enabled != null and user.enabled} ? 'status-active' : 'status-locked'"
+                            th:text="${user.enabled != null and user.enabled ? 'Hoạt động' : 'Bị khoá'}">
+                            Hoạt động
+                        </span>
+                    </div>
+                </div>
+
+                <div class="info-row">
+                    <div class="info-label">Ngày tạo:</div>
+                    <div class="info-value"
+                        th:text="${user.createdAt != null ? #temporals.format(user.createdAt, 'dd/MM/yyyy HH:mm:ss') : '-'}">
+                        01/01/2024 10:00:00
+                    </div>
+                </div>
+
+                <div class="info-row">
+                    <div class="info-label">Cập nhật lần cuối:</div>
+                    <div class="info-value"
+                        th:text="${user.updatedAt != null ? #temporals.format(user.updatedAt, 'dd/MM/yyyy HH:mm:ss') : '-'}">
+                        01/01/2024 10:00:00
+                    </div>
+                </div>
+            </div>
+
+            <!-- Change Role Section -->
+            <div class="info-section">
+                <h3 style="margin-top: 0;">Thay đổi vai trò</h3>
+                <form th:action="@{/users/{id}/change-role(id=${user.id})}" method="post"
+                    onsubmit="return confirm('Xác nhận thay đổi vai trò?');">
+                    <div class="form-group">
+                        <label for="role">Vai trò mới:</label>
+                        <select id="role" name="role" required class="form-control-sm">
+                            <option value="ROLE_ADMIN"
+                                th:selected="${user.role == T(com.hust.project1.entity.User.UserRole).ROLE_ADMIN}">
+                                Admin - Quản trị viên hệ thống
+                            </option>
+                            <option value="ROLE_LIBRARIAN"
+                                th:selected="${user.role == T(com.hust.project1.entity.User.UserRole).ROLE_LIBRARIAN}">
+                                Librarian - Thủ thư
+                            </option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Cập nhật vai trò</button>
+                </form>
+            </div>
+
+            <!-- Change Password Section -->
+            <div class="password-section">
+                <h3 style="margin-top: 0;">Đổi mật khẩu</h3>
+                <form th:action="@{/users/{id}/change-password(id=${user.id})}" method="post"
+                    onsubmit="return confirm('Xác nhận đổi mật khẩu cho tài khoản này?');">
+                    <div class="form-group">
+                        <label for="newPassword">Mật khẩu mới *</label>
+                        <input type="password" id="newPassword" name="newPassword" required minlength="6"
+                            class="form-control-sm" placeholder="Nhập mật khẩu mới (ít nhất 6 ký tự)">
+                        <div style="margin-top: 5px;">
+                            <label style="font-weight: normal; font-size: 13px;">
+                                <input type="checkbox" id="showPassword" onclick="togglePassword()">
+                                Hiển thị mật khẩu
+                            </label>
+                        </div>
+                        <small>Mật khẩu mới sẽ được mã hóa và lưu vào hệ thống</small>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Đổi mật khẩu</button>
+                </form>
+            </div>
+
+            <!-- Action Buttons -->
+            <div style="margin-top: 20px;">
+                <form th:action="@{/users/{id}/toggle-status(id=${user.id})}" method="post" style="display: inline;"
+                    th:onsubmit="'return confirm(\'Xác nhận ' + (${user.enabled} ? 'khoá' : 'mở khoá') + ' tài khoản này?\');'">
+                    <button type="submit" th:text="${user.enabled ? 'Khoá tài khoản' : 'Mở khoá tài khoản'}"
+                        th:disabled="${user.username == currentUsername}" class="btn btn-warning">
+                        Khoá tài khoản
+                    </button>
+                </form>
+
+                <form th:action="@{/users/{id}/delete(id=${user.id})}" method="post"
+                    style="display: inline; margin-left: 10px;"
+                    onsubmit="return confirm('Xác nhận xóa tài khoản này? Hành động không thể hoàn tác!');">
+                    <button type="submit" th:disabled="${user.username == currentUsername}" class="btn btn-delete">
+                        Xóa tài khoản
+                    </button>
+                </form>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        let passwordVisible = false;
+
+        function togglePasswordDisplay() {
+            const passwordDisplay = document.getElementById('passwordDisplay');
+            const actualPassword = document.getElementById('actualPassword').value;
+            const toggleIcon = document.getElementById('toggleIcon');
+
+            if (passwordVisible) {
+                // Hide password
+                passwordDisplay.textContent = '••••••••••••';
+                toggleIcon.textContent = 'Hiển thị';
+                passwordVisible = false;
+            } else {
+                // Show password
+                passwordDisplay.textContent = actualPassword;
+                toggleIcon.textContent = 'Ẩn';
+                passwordVisible = true;
+            }
+        }
+
+        function togglePassword() {
+            const passwordInput = document.getElementById('newPassword');
+            const checkbox = document.getElementById('showPassword');
+
+            if (checkbox.checked) {
+                passwordInput.type = 'text';
+            } else {
+                passwordInput.type = 'password';
+            }
+        }
+    </script>
+</body>
+
+</html>

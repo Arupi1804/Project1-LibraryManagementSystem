@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý Bản sao - Hệ thống quản lý thư viện</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+
+<body>
+    <!-- Include Navbar -->
+    <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+    <div class="main-layout">
+        <!-- Include Sidebar -->
+        <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="content-header">
+                <h2>Quản lý Bản sao Sách</h2>
+                <a th:href="@{/book-copies/new}" class="btn btn-primary">+ Thêm bản sao mới</a>
+            </div>
+
+            <!-- Success/Error Messages -->
+            <div th:if="${successMessage}" class="alert alert-success">
+                <span th:text="${successMessage}"></span>
+            </div>
+            <div th:if="${errorMessage}" class="alert alert-error">
+                <span th:text="${errorMessage}"></span>
+            </div>
+
+            <!-- Search Form -->
+            <div class="search-box">
+                <form th:action="@{/book-copies}" method="get" class="search-form">
+                    <div class="search-row">
+                        <div class="form-group-inline">
+                            <label>Mã bản sao:</label>
+                            <input type="text" name="copyNumber" th:value="${searchCopyNumber}" class="form-control-sm"
+                                placeholder="Tìm theo mã bản sao">
+                        </div>
+                        <div class="form-group-inline">
+                            <label>Trạng thái:</label>
+                            <select name="status" class="form-control-sm">
+                                <option value="">-- Tất cả --</option>
+                                <option th:each="s : ${statuses}" th:value="${s}" th:text="${s}"
+                                    th:selected="${s.toString() == searchStatus}"></option>
+                            </select>
+                        </div>
+                        <div class="form-group-inline">
+                            <label>Vị trí:</label>
+                            <input type="text" name="location" th:value="${searchLocation}" class="form-control-sm"
+                                placeholder="Tìm theo vị trí">
+                        </div>
+                        <button type="submit" class="btn btn-search">Tìm kiếm</button>
+                        <a th:href="@{/book-copies}" class="btn btn-secondary">Xóa bộ lọc</a>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Book Copy Table -->
+            <div class="table-container">
+                <table class="data-table" th:if="${!bookCopies.empty}">
+                    <thead>
+                        <tr>
+                            <th>Mã bản sao</th>
+                            <th>Tiêu đề sách</th>
+                            <th>ISBN</th>
+                            <th>Trạng thái</th>
+                            <th>Vị trí</th>
+                            <th>Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="copy : ${bookCopies}">
+                            <td th:text="${copy.copyNumber}"></td>
+                            <td th:text="${copy.book.title}"></td>
+                            <td th:text="${copy.book.isbn}"></td>
+                            <td>
+                                <span th:class="'status-badge status-' + ${copy.status.toString().toLowerCase()}"
+                                    th:text="${copy.status}"></span>
+                            </td>
+                            <td th:text="${copy.location}"></td>
+                            <td class="action-buttons">
+                                <a th:href="@{/book-copies/{id}/edit(id=${copy.id})}"
+                                    class="btn-action btn-edit">Sửa</a>
+                                <form th:action="@{/book-copies/{id}/delete(id=${copy.id})}" method="post"
+                                    style="display: inline;"
+                                    onsubmit="return confirm('Bạn có chắc muốn xóa bản sao này?');">
+                                    <button type="submit" class="btn-action btn-delete">Xóa</button>
+                                </form>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <!-- Empty State -->
+                <div th:if="${bookCopies.empty}" class="empty-state">
+                    <p>Không tìm thấy bản sao nào.</p>
+                    <a th:href="@{/book-copies/new}" class="btn btn-primary">Thêm bản sao đầu tiên</a>
+                </div>
+            </div>
+
+            <!-- Pagination -->
+            <div class="pagination" th:if="${totalPages > 0}">
+                <div class="pagination-info">
+                    Hiển thị <strong th:text="${bookCopies.size()}"></strong> /
+                    <strong th:text="${totalItems}"></strong> bản sao
+                </div>
+                <div class="pagination-controls">
+                    <a th:href="@{/book-copies(page=${currentPage - 1}, size=${pageSize}, 
+                               copyNumber=${searchCopyNumber}, status=${searchStatus}, 
+                               location=${searchLocation})}" th:classappend="${currentPage == 0} ? 'disabled' : ''"
+                        class="page-link">« Trước</a>
+
+                    <span th:each="i : ${#numbers.sequence(0, totalPages - 1)}"
+                        th:if="${i >= currentPage - 2 && i <= currentPage + 2}">
+                        <a th:href="@{/book-copies(page=${i}, size=${pageSize}, 
+                                   copyNumber=${searchCopyNumber}, status=${searchStatus}, 
+                                   location=${searchLocation})}" th:text="${i + 1}"
+                            th:classappend="${i == currentPage} ? 'active' : ''" class="page-link"></a>
+                    </span>
+
+                    <a th:href="@{/book-copies(page=${currentPage + 1}, size=${pageSize}, 
+                               copyNumber=${searchCopyNumber}, status=${searchStatus}, 
+                               location=${searchLocation})}"
+                        th:classappend="${currentPage + 1 >= totalPages} ? 'disabled' : ''" class="page-link">Sau »</a>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+
+</html>

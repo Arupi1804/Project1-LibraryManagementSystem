@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng nhập - Hệ thống quản lý thư viện</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+
+<body class="login-page">
+    <div class="login-container">
+        <div class="login-box">
+            <div class="login-header">
+                <h1>Hệ thống quản lý thư viện</h1>
+                <p>Đăng nhập để tiếp tục</p>
+            </div>
+
+            <!-- Error message -->
+            <div th:if="${error}" class="alert alert-error">
+                <span th:text="${error}"></span>
+            </div>
+
+            <!-- Success message -->
+            <div th:if="${message}" class="alert alert-success">
+                <span th:text="${message}"></span>
+            </div>
+
+            <form th:action="@{/login}" method="post" class="login-form">
+                <div class="form-group">
+                    <label for="username">Tên đăng nhập</label>
+                    <input type="text" id="username" name="username" class="form-control" required autofocus>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Mật khẩu</label>
+                    <input type="password" id="password" name="password" class="form-control" required>
+                </div>
+
+                <button type="submit" class="btn-login">Đăng nhập</button>
+            </form>
+
+            <div class="login-footer">
+                <p>Tài khoản mặc định:</p>  
+                <small>Admin: admin / admin123</small><br>
+                <small>Thủ thư: librarian / librarian123</small>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

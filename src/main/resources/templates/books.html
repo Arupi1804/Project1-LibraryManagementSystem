@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý Sách - Hệ thống quản lý thư viện</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+
+<body>
+    <!-- Include Navbar -->
+    <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+    <div class="main-layout">
+        <!-- Include Sidebar -->
+        <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="content-header">
+                <h2>Quản lý Sách</h2>
+                <a th:href="@{/books/new}" class="btn btn-primary">+ Thêm sách mới</a>
+            </div>
+
+            <!-- Success/Error Messages -->
+            <div th:if="${successMessage}" class="alert alert-success">
+                <span th:text="${successMessage}"></span>
+            </div>
+            <div th:if="${errorMessage}" class="alert alert-error">
+                <span th:text="${errorMessage}"></span>
+            </div>
+
+            <!-- Search Form -->
+            <div class="search-box">
+                <form th:action="@{/books}" method="get" class="search-form">
+                    <div class="search-row">
+                        <div class="form-group-inline">
+                            <label>Tiêu đề:</label>
+                            <input type="text" name="title" th:value="${searchTitle}" class="form-control-sm"
+                                placeholder="Tìm theo tiêu đề">
+                        </div>
+                        <div class="form-group-inline">
+                            <label>ISBN:</label>
+                            <input type="text" name="isbn" th:value="${searchIsbn}" class="form-control-sm"
+                                placeholder="Tìm theo ISBN">
+                        </div>
+                        <div class="form-group-inline">
+                            <label>Tác giả:</label>
+                            <input type="text" name="author" th:value="${searchAuthor}" class="form-control-sm"
+                                placeholder="Tìm theo tác giả">
+                        </div>
+                        <div class="form-group-inline">
+                            <label>Thể loại:</label>
+                            <input type="text" name="category" th:value="${searchCategory}" class="form-control-sm"
+                                placeholder="Tìm theo thể loại">
+                        </div>
+                        <button type="submit" class="btn btn-search">Tìm kiếm</button>
+                        <a th:href="@{/books}" class="btn btn-secondary">Xóa bộ lọc</a>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Book Table -->
+            <div class="table-container">
+                <table class="data-table" th:if="${!books.empty}">
+                    <thead>
+                        <tr>
+                            <th>ISBN</th>
+                            <th>Tiêu đề</th>
+                            <th>Tác giả</th>
+                            <th>Nhà xuất bản</th>
+                            <th>Năm XB</th>
+                            <th>Thể loại</th>
+                            <th>Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="book : ${books}">
+                            <td th:text="${book.isbn}"></td>
+                            <td th:text="${book.title}"></td>
+                            <td th:text="${book.author}"></td>
+                            <td th:text="${book.publisher}"></td>
+                            <td th:text="${book.publishYear}"></td>
+                            <td th:text="${book.category}"></td>
+                            <td class="action-buttons">
+                                <a th:href="@{/books/{id}/edit(id=${book.id})}" class="btn-action btn-edit">Sửa</a>
+                                <form th:action="@{/books/{id}/delete(id=${book.id})}" method="post"
+                                    style="display: inline;"
+                                    onsubmit="return confirm('Bạn có chắc muốn xóa sách này?');">
+                                    <button type="submit" class="btn-action btn-delete">Xóa</button>
+                                </form>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <!-- Empty State -->
+                <div th:if="${books.empty}" class="empty-state">
+                    <p>Không tìm thấy sách nào.</p>
+                    <a th:href="@{/books/new}" class="btn btn-primary">Thêm sách đầu tiên</a>
+                </div>
+            </div>
+
+            <!-- Pagination -->
+            <div class="pagination" th:if="${totalPages > 0}">
+                <div class="pagination-info">
+                    Hiển thị <strong th:text="${books.size()}"></strong> /
+                    <strong th:text="${totalItems}"></strong> sách
+                </div>
+                <div class="pagination-controls">
+                    <a th:href="@{/books(page=${currentPage - 1}, size=${pageSize}, 
+                               title=${searchTitle}, isbn=${searchIsbn}, 
+                               author=${searchAuthor}, category=${searchCategory})}"
+                        th:classappend="${currentPage == 0} ? 'disabled' : ''" class="page-link">« Trước</a>
+
+                    <span th:each="i : ${#numbers.sequence(0, totalPages - 1)}"
+                        th:if="${i >= currentPage - 2 && i <= currentPage + 2}">
+                        <a th:href="@{/books(page=${i}, size=${pageSize}, 
+                                   title=${searchTitle}, isbn=${searchIsbn}, 
+                                   author=${searchAuthor}, category=${searchCategory})}" th:text="${i + 1}"
+                            th:classappend="${i == currentPage} ? 'active' : ''" class="page-link"></a>
+                    </span>
+
+                    <a th:href="@{/books(page=${currentPage + 1}, size=${pageSize}, 
+                               title=${searchTitle}, isbn=${searchIsbn}, 
+                               author=${searchAuthor}, category=${searchCategory})}"
+                        th:classappend="${currentPage + 1 >= totalPages} ? 'disabled' : ''" class="page-link">Sau »</a>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+
+</html>

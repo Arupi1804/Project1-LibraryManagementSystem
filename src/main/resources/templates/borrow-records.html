@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý Mượn/Trả - Hệ thống quản lý thư viện</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+
+<body>
+    <!-- Include Navbar -->
+    <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+    <div class="main-layout">
+        <!-- Include Sidebar -->
+        <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="content-header">
+                <h2>Quản lý Mượn/Trả Sách</h2>
+                <a th:href="@{/borrow-records/new}" class="btn btn-primary">+ Tạo phiếu mượn mới</a>
+            </div>
+
+            <!-- Success/Error Messages -->
+            <div th:if="${successMessage}" class="alert alert-success">
+                <span th:text="${successMessage}"></span>
+            </div>
+            <div th:if="${errorMessage}" class="alert alert-error">
+                <span th:text="${errorMessage}"></span>
+            </div>
+
+            <!-- Search Form -->
+            <div class="search-box">
+                <form th:action="@{/borrow-records}" method="get" class="search-form">
+                    <div class="search-row">
+                        <div class="form-group-inline">
+                            <label>Độc giả:</label>
+                            <select name="memberId" class="form-control-sm">
+                                <option value="">-- Tất cả --</option>
+                                <option th:each="m : ${members}" th:value="${m.id}"
+                                    th:text="${m.fullName + ' (' + m.memberCode + ')'}"
+                                    th:selected="${m.id.toString() == searchMemberId}"></option>
+                            </select>
+                        </div>
+                        <div class="form-group-inline">
+                            <label>Trạng thái:</label>
+                            <select name="status" class="form-control-sm">
+                                <option value="">-- Tất cả --</option>
+                                <option th:each="s : ${statuses}" th:value="${s}" th:text="${s}"
+                                    th:selected="${s.toString() == searchStatus}"></option>
+                            </select>
+                        </div>
+                        <div class="form-group-inline">
+                            <label>Từ ngày:</label>
+                            <input type="date" name="fromDate" th:value="${searchFromDate}" class="form-control-sm">
+                        </div>
+                        <div class="form-group-inline">
+                            <label>Đến ngày:</label>
+                            <input type="date" name="toDate" th:value="${searchToDate}" class="form-control-sm">
+                        </div>
+                        <button type="submit" class="btn btn-search">Tìm kiếm</button>
+                        <a th:href="@{/borrow-records}" class="btn btn-secondary">Xóa bộ lọc</a>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Borrow Records Table -->
+            <div class="table-container">
+                <table class="data-table" th:if="${!borrowRecords.empty}">
+                    <thead>
+                        <tr>
+                            <th>Mã phiếu</th>
+                            <th>Độc giả</th>
+                            <th>Ngày mượn</th>
+                            <th>Ngày hẹn trả</th>
+                            <th>Ngày trả</th>
+                            <th>Trạng thái</th>
+                            <th>Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="record : ${borrowRecords}">
+                            <td th:text="${record.id}"></td>
+                            <td th:text="${record.member.fullName}"></td>
+                            <td th:text="${#temporals.format(record.borrowDate, 'dd/MM/yyyy')}"></td>
+                            <td th:text="${#temporals.format(record.dueDate, 'dd/MM/yyyy')}"></td>
+                            <td
+                                th:text="${record.returnDate != null ? #temporals.format(record.returnDate, 'dd/MM/yyyy') : '-'}">
+                            </td>
+                            <td>
+                                <span th:class="'status-badge status-' + ${record.status.toString().toLowerCase()}"
+                                    th:text="${record.status}"></span>
+                            </td>
+                            <td class="action-buttons">
+                                <a th:href="@{/borrow-records/{id}(id=${record.id})}" class="btn-action btn-view">Chi
+                                    tiết</a>
+                                <form
+                                    th:if="${record.status.toString() == 'ACTIVE' || record.status.toString() == 'OVERDUE'}"
+                                    th:action="@{/borrow-records/{id}/return-all(id=${record.id})}" method="post"
+                                    style="display: inline;" onsubmit="return confirm('Xác nhận trả toàn bộ sách?');">
+                                    <button type="submit" class="btn-action btn-return">Trả sách</button>
+                                </form>
+                                <form th:action="@{/borrow-records/{id}/delete(id=${record.id})}" method="post"
+                                    style="display: inline;"
+                                    onsubmit="return confirm('Bạn có chắc muốn xóa phiếu mượn này?');">
+                                    <button type="submit" class="btn-action btn-delete">Xóa</button>
+                                </form>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <!-- Empty State -->
+                <div th:if="${borrowRecords.empty}" class="empty-state">
+                    <p>Không tìm thấy phiếu mượn nào.</p>
+                    <a th:href="@{/borrow-records/new}" class="btn btn-primary">Tạo phiếu mượn đầu tiên</a>
+                </div>
+            </div>
+
+            <!-- Pagination -->
+            <div class="pagination" th:if="${totalPages > 0}">
+                <div class="pagination-info">
+                    Hiển thị <strong th:text="${records.size()}"></strong> /
+                    <strong th:text="${totalItems}"></strong> phiếu mượn
+                </div>
+                <div class="pagination-controls">
+                    <a th:href="@{/borrow-records(page=${currentPage - 1}, size=${pageSize}, 
+                               memberId=${searchMemberId}, status=${searchStatus},
+                               fromDate=${searchFromDate}, toDate=${searchToDate})}"
+                        th:classappend="${currentPage == 0} ? 'disabled' : ''" class="page-link">« Trước</a>
+
+                    <span th:each="i : ${#numbers.sequence(0, totalPages - 1)}"
+                        th:if="${i >= currentPage - 2 && i <= currentPage + 2}">
+                        <a th:href="@{/borrow-records(page=${i}, size=${pageSize}, 
+                                   memberId=${searchMemberId}, status=${searchStatus},
+                                   fromDate=${searchFromDate}, toDate=${searchToDate})}" th:text="${i + 1}"
+                            th:classappend="${i == currentPage} ? 'active' : ''" class="page-link"></a>
+                    </span>
+
+                    <a th:href="@{/borrow-records(page=${currentPage + 1}, size=${pageSize}, 
+                               memberId=${searchMemberId}, status=${searchStatus},
+                               fromDate=${searchFromDate}, toDate=${searchToDate})}"
+                        th:classappend="${currentPage + 1 >= totalPages} ? 'disabled' : ''" class="page-link">Sau »</a>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+
+</html>

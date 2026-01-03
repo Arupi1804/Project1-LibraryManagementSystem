@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chi tiết phiếu mượn - Hệ thống quản lý thư viện</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+
+<body>
+    <!-- Include Navbar -->
+    <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+    <div class="main-layout">
+        <!-- Include Sidebar -->
+        <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="content-header">
+                <h2>Chi tiết Phiếu Mượn #<span th:text="${record.id}"></span></h2>
+                <a th:href="@{/borrow-records}" class="btn btn-secondary">← Quay lại</a>
+            </div>
+
+            <!-- Success/Error Messages -->
+            <div th:if="${successMessage}" class="alert alert-success">
+                <span th:text="${successMessage}"></span>
+            </div>
+            <div th:if="${errorMessage}" class="alert alert-error">
+                <span th:text="${errorMessage}"></span>
+            </div>
+
+            <!-- Member Information -->
+            <div class="info-card">
+                <h3>Thông tin Độc giả</h3>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <label>Mã độc giả:</label>
+                        <span th:text="${record.member.memberCode}"></span>
+                    </div>
+                    <div class="info-item">
+                        <label>Họ tên:</label>
+                        <span th:text="${record.member.fullName}"></span>
+                    </div>
+                    <div class="info-item">
+                        <label>Email:</label>
+                        <span th:text="${record.member.email}"></span>
+                    </div>
+                    <div class="info-item">
+                        <label>Số điện thoại:</label>
+                        <span th:text="${record.member.phone}"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Borrow Record Information -->
+            <div class="info-card">
+                <h3>Thông tin Phiếu Mượn</h3>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <label>Ngày mượn:</label>
+                        <span th:text="${#temporals.format(record.borrowDate, 'dd/MM/yyyy')}"></span>
+                    </div>
+                    <div class="info-item">
+                        <label>Ngày hẹn trả:</label>
+                        <span th:text="${#temporals.format(record.dueDate, 'dd/MM/yyyy')}"></span>
+                    </div>
+                    <div class="info-item">
+                        <label>Ngày trả thực tế:</label>
+                        <span
+                            th:text="${record.returnDate != null ? #temporals.format(record.returnDate, 'dd/MM/yyyy') : 'Chưa trả'}"></span>
+                    </div>
+                    <div class="info-item">
+                        <label>Trạng thái:</label>
+                        <span th:class="'status-badge status-' + ${record.status.toString().toLowerCase()}"
+                            th:text="${record.status}"></span>
+                    </div>
+                    <div class="info-item fine-display" th:if="${totalFine > 0}">
+                        <label>Tổng tiền phạt:</label>
+                        <span class="fine-amount"
+                            th:text="${#numbers.formatDecimal(totalFine, 0, 'COMMA', 0, 'POINT')} + ' VND'"></span>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div style="margin-top: 20px; display: flex; gap: 10px;">
+                    <!-- Return All Button -->
+                    <div th:if="${record.status.toString() == 'ACTIVE' || record.status.toString() == 'OVERDUE'}">
+                        <form th:action="@{/borrow-records/{id}/return-all(id=${record.id})}" method="post"
+                            onsubmit="return confirm('Xác nhận trả toàn bộ sách?');">
+                            <button type="submit" class="btn btn-primary">Trả toàn bộ sách</button>
+                        </form>
+                    </div>
+
+                    <!-- Pay Fine Button -->
+                    <div th:if="${totalFine > 0}">
+                        <form th:action="@{/borrow-records/{id}/pay-fine(id=${record.id})}" method="post"
+                            th:attr="onsubmit='return confirm(\'Xác nhận độc giả đã đóng tiền phạt ' + ${#numbers.formatDecimal(totalFine, 0, 'COMMA', 0, 'POINT')} + ' VND?\');'">
+                            <button type="submit" class="btn btn-primary"
+                                style="background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%);">
+                                Xác nhận đã đóng tiền phạt
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Borrowed Books Table -->
+            <div class="table-container">
+                <h3>Danh sách Sách Mượn</h3>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Mã bản sao</th>
+                            <th>Tiêu đề sách</th>
+                            <th>ISBN</th>
+                            <th>Trạng thái sách</th>
+                            <th>Ngày trả</th>
+                            <th>Tiền phạt</th>
+                            <th>Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="detail : ${details}">
+                            <td th:text="${detail.bookCopy.copyNumber}"></td>
+                            <td th:text="${detail.bookCopy.book.title}"></td>
+                            <td th:text="${detail.bookCopy.book.isbn}"></td>
+                            <td>
+                                <span
+                                    th:class="'status-badge status-' + ${detail.bookCopy.status.toString().toLowerCase()}"
+                                    th:text="${detail.bookCopy.status}"></span>
+                            </td>
+                            <td
+                                th:text="${detail.actualReturnDate != null ? #temporals.format(detail.actualReturnDate, 'dd/MM/yyyy') : '-'}">
+                            </td>
+                            <td>
+                                <span th:if="${detail.fine > 0}" class="fine-amount"
+                                    th:text="${#numbers.formatDecimal(detail.fine, 0, 'COMMA', 0, 'POINT')} + ' VND'"></span>
+                                <span th:if="${detail.fine == 0}">0 VND</span>
+                            </td>
+                            <td class="action-buttons">
+                                <!-- Return button -->
+                                <form
+                                    th:if="${detail.actualReturnDate == null && detail.bookCopy.status.toString() == 'BORROWED'}"
+                                    th:action="@{/borrow-records/{id}/details/{detailId}/return(id=${record.id}, detailId=${detail.id})}"
+                                    method="post" style="display: inline;">
+                                    <button type="submit" class="btn-action btn-return">Trả sách</button>
+                                </form>
+
+                                <!-- Update status dropdown -->
+                                <form th:if="${detail.actualReturnDate == null}"
+                                    th:action="@{/borrow-records/{id}/details/{detailId}/update-status(id=${record.id}, detailId=${detail.id})}"
+                                    method="post" style="display: inline;">
+                                    <select name="status" class="form-control-sm"
+                                        onchange="if(confirm('Xác nhận cập nhật trạng thái?')) this.form.submit();">
+                                        <option value="">-- Cập nhật --</option>
+                                        <option value="LOST">Đánh dấu mất</option>
+                                        <option value="DAMAGED">Đánh dấu hỏng</option>
+                                    </select>
+                                </form>
+
+                                <span th:if="${detail.actualReturnDate != null}" class="text-success">✓ Đã trả</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Notes -->
+            <div class="info-card" th:if="${record.notes != null && !record.notes.isEmpty()}">
+                <h3>Ghi chú</h3>
+                <p th:text="${record.notes}"></p>
+            </div>
+        </main>
+    </div>
+</body>
+
+</html>

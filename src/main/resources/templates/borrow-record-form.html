@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tạo phiếu mượn mới - Hệ thống quản lý thư viện</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <style>
+        #memberId {
+            border: 1px solid #ddd;
+        }
+
+        #memberId option {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        #memberId option:hover {
+            background-color: #f0ebf8;
+        }
+
+        .member-selected {
+            background-color: #e8f5e9;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+            border: 2px solid #4CAF50;
+        }
+
+        .member-selected strong {
+            color: #2e7d32;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Include Navbar -->
+    <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+    <div class="main-layout">
+        <!-- Include Sidebar -->
+        <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="content-header">
+                <h2>Tạo Phiếu Mượn Mới</h2>
+                <a th:href="@{/borrow-records}" class="btn btn-secondary">← Quay lại</a>
+            </div>
+
+            <!-- Success/Error Messages -->
+            <div th:if="${successMessage}" class="alert alert-success">
+                <span th:text="${successMessage}"></span>
+            </div>
+            <div th:if="${errorMessage}" class="alert alert-error">
+                <span th:text="${errorMessage}"></span>
+            </div>
+
+            <form th:action="@{/borrow-records}" method="post" id="borrowForm">
+                <!-- Step 1: Member Selection -->
+                <div class="info-card">
+                    <h3>1. Chọn Độc giả</h3>
+
+                    <!-- Member Search -->
+                    <div class="form-group" id="memberSearchGroup">
+                        <label for="memberSearchInput">Tìm kiếm độc giả:</label>
+                        <input type="text" id="memberSearchInput" class="form-control"
+                            placeholder="Gõ để tìm theo tên, mã, hoặc email...">
+                    </div>
+
+                    <div class="form-group" id="memberSelectGroup">
+                        <label for="memberId">Độc giả <span class="required">*</span></label>
+                        <select id="memberId" name="memberId" class="form-control" required size="8">
+                            <option value="">-- Chọn độc giả --</option>
+                            <option th:each="member : ${members}" th:value="${member.id}"
+                                th:text="${member.fullName + ' (' + member.memberCode + ') - ' + member.email + ' [' + member.activeBorrowCount + '/3]'}"
+                                th:attr="data-name=${member.fullName}, data-code=${member.memberCode}, data-email=${member.email}, data-borrow-count=${member.activeBorrowCount}">
+                            </option>
+                        </select>
+                        <small class="form-text">Chọn độc giả từ danh sách (số hiển thị: sách đang mượn/tối đa)</small>
+                    </div>
+
+                    <!-- Selected Member Display -->
+                    <div id="selectedMemberDisplay" class="member-selected" style="display: none;">
+                        <strong>Độc giả đã chọn:</strong> <span id="selectedMemberText"></span>
+                        <button type="button" class="btn btn-secondary" style="margin-left: 10px;"
+                            onclick="changeMember()">Đổi độc giả</button>
+                    </div>
+                </div>
+
+                <!-- Step 2: Book Copy Selection -->
+                <div class="info-card">
+                    <h3>2. Chọn Sách Mượn (Tối đa 3 cuốn)</h3>
+
+                    <!-- Search Box -->
+                    <div class="form-group" id="bookSearchGroup">
+                        <label for="bookSearch">Tìm kiếm sách:</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="bookSearch" class="form-control"
+                                placeholder="Nhập tiêu đề, ISBN, hoặc mã bản sao để tìm kiếm...">
+                            <button type="button" class="btn btn-search" onclick="filterBooks()">Tìm kiếm</button>
+                            <button type="button" class="btn btn-secondary" onclick="clearBookSearch()">Xóa</button>
+                        </div>
+                    </div>
+                    <div class="selected-count" id="selectedCount" style="margin-bottom: 15px;">
+                        Đã chọn: <span id="count">0</span>/3 cuốn sách
+                    </div>
+
+                    <!-- Confirm Selection Button -->
+                    <div id="confirmSelectionGroup" style="margin-bottom: 15px; display: none;">
+                        <button type="button" class="btn btn-primary" onclick="confirmBookSelection()">
+                            ✓ Xác nhận chọn sách
+                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="changeBookSelection()"
+                            style="display: none;" id="changeSelectionBtn">
+                            Thay đổi lựa chọn
+                        </button>
+                    </div>
+
+                    <!-- Book Copy Grid -->
+                    <div class="book-selection-grid" id="bookGrid">
+                        <div th:each="copy : ${bookCopies}" class="book-item"
+                            th:attr="data-title=${copy.book.title}, data-isbn=${copy.book.isbn}, data-copy=${copy.copyNumber}">
+                            <label>
+                                <input type="checkbox" name="bookCopyIds" th:value="${copy.id}" class="book-checkbox">
+                                <strong th:text="${copy.book.title}"></strong><br>
+                                <small>ISBN: <span th:text="${copy.book.isbn}"></span></small><br>
+                                <small>Mã bản sao: <span th:text="${copy.copyNumber}"></span></small><br>
+                                <small>Vị trí: <span th:text="${copy.location}"></span></small>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div th:if="${bookCopies.empty}" class="empty-state">
+                        <p>Không tìm thấy sách khả dụng nào.</p>
+                    </div>
+
+                </div>
+
+                <!-- Step 3: Due Date -->
+                <div class="info-card">
+                    <h3>3. Ngày Hẹn Trả</h3>
+                    <div class="form-group">
+                        <label for="dueDate">Ngày hẹn trả:</label>
+                        <input type="date" id="dueDate" name="dueDate" class="form-control"
+                            th:value="${#temporals.format(#temporals.createToday().plusDays(14), 'yyyy-MM-dd')}">
+                        <small class="form-text">Mặc định: 14 ngày từ hôm nay</small>
+                    </div>
+                </div>
+
+                <!-- Submit -->
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary" id="submitBtn">Tạo phiếu mượn</button>
+                    <a th:href="@{/borrow-records}" class="btn btn-secondary">Hủy</a>
+                </div>
+            </form>
+        </main>
+    </div>
+
+    <script>
+        let selectedMemberBorrowCount = 0;
+        let maxBooksAllowed = 3;
+
+        // Member search filter
+        document.getElementById('memberSearchInput').addEventListener('input', function () {
+            const searchTerm = this.value.toLowerCase();
+            const memberSelect = document.getElementById('memberId');
+            const options = memberSelect.options;
+
+            for (let i = 1; i < options.length; i++) {
+                const option = options[i];
+                const name = option.getAttribute('data-name').toLowerCase();
+                const code = option.getAttribute('data-code').toLowerCase();
+                const email = option.getAttribute('data-email').toLowerCase();
+
+                if (name.includes(searchTerm) || code.includes(searchTerm) || email.includes(searchTerm)) {
+                    option.style.display = '';
+                } else {
+                    option.style.display = 'none';
+                }
+            }
+        });
+
+        // Handle member selection
+        document.getElementById('memberId').addEventListener('change', function () {
+            if (this.value) {
+                const selectedOption = this.options[this.selectedIndex];
+                const selectedText = selectedOption.text;
+                const borrowCount = parseInt(selectedOption.getAttribute('data-borrow-count')) || 0;
+
+                // Update global variables
+                selectedMemberBorrowCount = borrowCount;
+                maxBooksAllowed = 3 - borrowCount;
+
+                // Check if member can borrow more books
+                if (maxBooksAllowed <= 0) {
+                    alert('Độc giả đã mượn đủ 3 sách! Không thể tạo phiếu mượn mới.');
+                    this.value = '';
+                    return;
+                }
+
+                // Update UI
+                document.getElementById('selectedMemberText').textContent = selectedText;
+                document.getElementById('selectedMemberDisplay').style.display = 'block';
+                document.getElementById('memberSearchGroup').style.display = 'none';
+                document.getElementById('memberSelectGroup').style.display = 'none';
+
+                // Update counter text with dynamic limit
+                updateCounterText();
+            }
+        });
+
+        // Change member
+        function changeMember() {
+            document.getElementById('selectedMemberDisplay').style.display = 'none';
+            document.getElementById('memberSearchGroup').style.display = 'block';
+            document.getElementById('memberSelectGroup').style.display = 'block';
+            document.getElementById('memberId').value = '';
+
+            // Reset to default
+            selectedMemberBorrowCount = 0;
+            maxBooksAllowed = 3;
+
+            // Uncheck all books
+            document.querySelectorAll('.book-checkbox:checked').forEach(cb => cb.checked = false);
+            document.querySelectorAll('.book-item').forEach(item => item.classList.remove('selected'));
+
+            updateSelectedCount();
+        }
+
+        // Update counter text
+        function updateCounterText() {
+            const count = document.querySelectorAll('.book-checkbox:checked').length;
+            const countSpan = document.getElementById('count');
+            const counterDiv = document.getElementById('selectedCount');
+
+            // Update count number
+            if (countSpan) {
+                countSpan.textContent = count;
+            }
+
+            // Update full counter HTML
+            counterDiv.innerHTML =
+                'Đã chọn: <span id="count">' + count + '</span>/' + maxBooksAllowed + ' cuốn sách' +
+                (selectedMemberBorrowCount > 0 ? ' <span style="color: #999;">(Độc giả đang mượn: ' + selectedMemberBorrowCount + '/3)</span>' : '');
+        }
+
+        // Track selected books
+        function updateSelectedCount() {
+            updateCounterText();
+        }
+
+        // Add event listeners to checkboxes
+        document.querySelectorAll('.book-checkbox').forEach(checkbox => {
+            checkbox.addEventListener('change', function () {
+                const bookItem = this.closest('.book-item');
+                if (this.checked) {
+                    bookItem.classList.add('selected');
+                } else {
+                    bookItem.classList.remove('selected');
+                }
+                updateSelectedCount();
+                enforceLimit();
+                updateConfirmButton();
+            });
+        });
+
+        // Update confirm button visibility
+        function updateConfirmButton() {
+            const selectedCount = document.querySelectorAll('.book-checkbox:checked').length;
+            const confirmGroup = document.getElementById('confirmSelectionGroup');
+
+            if (selectedCount > 0) {
+                confirmGroup.style.display = 'block';
+            } else {
+                confirmGroup.style.display = 'none';
+            }
+        }
+
+        // Confirm book selection - hide unselected books
+        function confirmBookSelection() {
+            const selectedCount = document.querySelectorAll('.book-checkbox:checked').length;
+
+            if (selectedCount === 0) {
+                alert('Vui lòng chọn ít nhất một cuốn sách!');
+                return;
+            }
+
+            // Hide search box
+            document.getElementById('bookSearchGroup').style.display = 'none';
+
+            // Hide unselected books
+            document.querySelectorAll('.book-item').forEach(item => {
+                const checkbox = item.querySelector('.book-checkbox');
+                if (!checkbox.checked) {
+                    item.style.display = 'none';
+                }
+            });
+
+            // Make checkboxes readonly (not disabled, so they still submit)
+            document.querySelectorAll('.book-checkbox').forEach(cb => {
+                cb.style.pointerEvents = 'none';  // Prevent clicking
+                cb.closest('.book-item').style.opacity = '1';  // Keep full opacity
+            });
+
+            // Update button visibility
+            document.querySelector('#confirmSelectionGroup button:first-child').style.display = 'none';
+            document.getElementById('changeSelectionBtn').style.display = 'inline-block';
+
+            // Update counter text
+            document.getElementById('selectedCount').innerHTML =
+                '<strong style="color: #4CAF50;">✓ Đã xác nhận: ' + selectedCount + ' cuốn sách</strong>';
+        }
+
+        // Change book selection - show all books again
+        function changeBookSelection() {
+            // Show search box
+            document.getElementById('bookSearchGroup').style.display = 'block';
+
+            // Show all books
+            document.querySelectorAll('.book-item').forEach(item => {
+                item.style.display = '';
+            });
+
+            // Re-enable checkboxes
+            document.querySelectorAll('.book-checkbox').forEach(cb => {
+                cb.style.pointerEvents = 'auto';  // Re-enable clicking
+            });
+
+            // Update button visibility
+            document.querySelector('#confirmSelectionGroup button:first-child').style.display = 'inline-block';
+            document.getElementById('changeSelectionBtn').style.display = 'none';
+
+            // Update counter
+            updateCounterText();
+            enforceLimit();
+        }
+
+        // Enforce dynamic book limit
+        function enforceLimit() {
+            const checkboxes = document.querySelectorAll('.book-checkbox:checked');
+            const count = checkboxes.length;
+
+            if (count >= maxBooksAllowed) {
+                document.querySelectorAll('.book-checkbox:not(:checked)').forEach(cb => {
+                    cb.disabled = true;
+                    cb.closest('.book-item').style.opacity = '0.5';
+                });
+            } else {
+                document.querySelectorAll('.book-checkbox').forEach(cb => {
+                    cb.disabled = false;
+                    cb.closest('.book-item').style.opacity = '1';
+                });
+            }
+        }
+
+        // Book search filter
+        function filterBooks() {
+            const searchTerm = document.getElementById('bookSearch').value.toLowerCase();
+            const bookItems = document.querySelectorAll('.book-item');
+
+            bookItems.forEach(item => {
+                const title = item.getAttribute('data-title').toLowerCase();
+                const isbn = item.getAttribute('data-isbn').toLowerCase();
+                const copyNumber = item.getAttribute('data-copy').toLowerCase();
+
+                if (title.includes(searchTerm) || isbn.includes(searchTerm) || copyNumber.includes(searchTerm)) {
+                    item.style.display = '';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+
+        // Clear book search
+        function clearBookSearch() {
+            document.getElementById('bookSearch').value = '';
+            document.querySelectorAll('.book-item').forEach(item => {
+                item.style.display = '';
+            });
+        }
+
+        // Allow search on Enter key
+        document.getElementById('bookSearch').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                filterBooks();
+            }
+        });
+
+        // Form validation
+        document.getElementById('borrowForm').addEventListener('submit', function (e) {
+            const memberSelected = document.getElementById('memberId').value;
+            const booksSelected = document.querySelectorAll('.book-checkbox:checked');
+
+            if (!memberSelected) {
+                e.preventDefault();
+                alert('Vui lòng chọn độc giả!');
+                return false;
+            }
+
+            if (booksSelected.length === 0) {
+                e.preventDefault();
+                alert('Vui lòng chọn ít nhất một cuốn sách!');
+                return false;
+            }
+
+            if (booksSelected.length > maxBooksAllowed) {
+                e.preventDefault();
+                alert('Chỉ được chọn tối đa ' + maxBooksAllowed + ' cuốn sách! (Độc giả đang mượn ' + selectedMemberBorrowCount + '/3 sách)');
+                return false;
+            }
+
+            return true;
+        });
+
+        // Initialize count
+        updateSelectedCount();
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${isEdit} ? 'Sửa Độc giả' : 'Thêm Độc giả Mới'">Form Độc giả</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+
+<body>
+    <!-- Include Navbar -->
+    <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+    <div class="main-layout">
+        <!-- Include Sidebar -->
+        <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="content-header">
+                <h2 th:text="${isEdit} ? 'Sửa Thông Tin Độc giả' : 'Thêm Độc giả Mới'">Form Độc giả</h2>
+            </div>
+
+            <div class="form-container">
+                <form th:action="${isEdit} ? @{/members/{id}(id=${member.id})} : @{/members}" method="post"
+                    th:object="${member}" class="book-form">
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="memberCode">Mã độc giả <span class="required">*</span></label>
+                            <input type="text" id="memberCode" th:field="*{memberCode}" class="form-control" required
+                                placeholder="Nhập mã độc giả (ví dụ: DG001)">
+                            <span class="error-message" th:if="${#fields.hasErrors('memberCode')}"
+                                th:errors="*{memberCode}"></span>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="fullName">Họ tên <span class="required">*</span></label>
+                            <input type="text" id="fullName" th:field="*{fullName}" class="form-control" required
+                                placeholder="Nhập họ và tên đầy đủ">
+                            <span class="error-message" th:if="${#fields.hasErrors('fullName')}"
+                                th:errors="*{fullName}"></span>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="email">Email <span class="required">*</span></label>
+                            <input type="email" id="email" th:field="*{email}" class="form-control" required
+                                placeholder="Nhập email">
+                            <span class="error-message" th:if="${#fields.hasErrors('email')}"
+                                th:errors="*{email}"></span>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="phone">Số điện thoại</label>
+                            <input type="tel" id="phone" th:field="*{phone}" class="form-control"
+                                placeholder="Nhập số điện thoại">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="address">Địa chỉ</label>
+                        <textarea id="address" th:field="*{address}" class="form-control" rows="3"
+                            placeholder="Nhập địa chỉ"></textarea>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="registrationDate">Ngày đăng ký</label>
+                            <input type="date" id="registrationDate" th:field="*{registrationDate}"
+                                class="form-control">
+                            <small class="form-text">Để trống sẽ tự động lấy ngày hiện tại</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="expiryDate">Ngày hết hạn</label>
+                            <input type="date" id="expiryDate" th:field="*{expiryDate}" class="form-control">
+                            <small class="form-text">Để trống sẽ tự động tính 1 năm từ ngày đăng ký</small>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="status">Trạng thái <span class="required">*</span></label>
+                        <select id="status" th:field="*{status}" class="form-control" required>
+                            <option value="">-- Chọn trạng thái --</option>
+                            <option th:each="s : ${statuses}" th:value="${s}" th:text="${s}">
+                            </option>
+                        </select>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">
+                            <span th:text="${isEdit} ? 'Cập nhật' : 'Thêm mới'">Lưu</span>
+                        </button>
+                        <a th:href="@{/members}" class="btn btn-secondary">Hủy</a>
+                    </div>
+                </form>
+            </div>
+        </main>
+    </div>
+</body>
+
+</html>

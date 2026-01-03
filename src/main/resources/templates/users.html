@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý Người dùng - Hệ thống quản lý thư viện</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <style>
+        .role-badge {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .role-admin {
+            background: #ff6b6b;
+            color: white;
+        }
+
+        .role-librarian {
+            background: #4ecdc4;
+            color: white;
+        }
+
+        .status-active {
+            background: #51cf66;
+            color: white;
+        }
+
+        .status-locked {
+            background: #868e96;
+            color: white;
+        }
+
+        .role-select {
+            padding: 4px 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Include Navbar -->
+    <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+    <div class="main-layout">
+        <!-- Include Sidebar -->
+        <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="content-header">
+                <h2>Quản lý Người dùng</h2>
+                <a th:href="@{/users/new}" class="btn btn-primary">Tạo tài khoản mới</a>
+            </div>
+
+            <!-- Success/Error Messages -->
+            <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+            <div th:if="${errorMessage}" class="alert alert-error" th:text="${errorMessage}"></div>
+
+            <!-- Search Form -->
+            <div class="search-box">
+                <form th:action="@{/users}" method="get" class="search-form">
+                    <div class="search-row">
+                        <div class="form-group-inline">
+                            <input type="text" name="keyword" th:value="${searchKeyword}"
+                                placeholder="Tìm kiếm theo username hoặc email..." class="form-control-sm" />
+                        </div>
+                        <button type="submit" class="btn btn-search">Tìm kiếm</button>
+                        <a th:href="@{/users}" class="btn btn-secondary">Xóa bộ lọc</a>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Users Table -->
+            <div class="table-container">
+                <table class="data-table" th:if="${!users.empty}">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>Vai trò</th>
+                            <th>Trạng thái</th>
+                            <th>Ngày tạo</th>
+                            <th>Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="user : ${users}">
+                            <td th:text="${user.id}">1</td>
+                            <td th:text="${user.username}">admin</td>
+                            <td th:text="${user.email}">admin@example.com</td>
+                            <td>
+                                <span class="role-badge"
+                                    th:classappend="${user.role.toString() == 'ROLE_ADMIN'} ? 'role-admin' : 'role-librarian'"
+                                    th:text="${user.role == T(com.hust.project1.entity.User.UserRole).ROLE_ADMIN ? 'Admin' : 'Librarian'}">
+                                    Admin
+                                </span>
+                            </td>
+                            <td>
+                                <span class="status-badge"
+                                    th:classappend="${user.enabled} ? 'status-active' : 'status-locked'"
+                                    th:text="${user.enabled ? 'Hoạt động' : 'Bị khoá'}">
+                                    Hoạt động
+                                </span>
+                            </td>
+                            <td
+                                th:text="${user.createdAt != null ? #temporals.format(user.createdAt, 'dd/MM/yyyy HH:mm') : '-'}">
+                                01/01/2024 10:00
+                            </td>
+                            <td class="action-buttons">
+                                <!-- View Detail Button -->
+                                <a th:href="@{/users/{id}(id=${user.id})}" class="btn-action btn-view">
+                                    Chi tiết
+                                </a>
+
+                                <!-- Toggle Status Button -->
+                                <form th:action="@{/users/{id}/toggle-status(id=${user.id})}" method="post"
+                                    style="display: inline;"
+                                    th:onsubmit="'return confirm(\'Xác nhận ' + (${user.enabled} ? 'khoá' : 'mở khoá') + ' tài khoản này?\');'">
+                                    <button type="submit" th:text="${user.enabled ? 'Khoá' : 'Mở khoá'}"
+                                        th:disabled="${user.username == currentUsername}"
+                                        class="btn-action btn-warning">
+                                        Khoá
+                                    </button>
+                                </form>
+
+                                <!-- Delete Button -->
+                                <form th:action="@{/users/{id}/delete(id=${user.id})}" method="post"
+                                    style="display: inline;"
+                                    onsubmit="return confirm('Xác nhận xóa tài khoản này? Hành động không thể hoàn tác!');">
+                                    <button type="submit" th:disabled="${user.username == currentUsername}"
+                                        class="btn-action btn-delete">
+                                        Xóa
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <!-- Empty State -->
+                <div th:if="${users.empty}" class="empty-state">
+                    <p>Không tìm thấy người dùng nào.</p>
+                    <a th:href="@{/users/new}" class="btn btn-primary">Tạo tài khoản đầu tiên</a>
+                </div>
+            </div>
+
+            <!-- Pagination -->
+            <div th:if="${totalPages > 1}" class="pagination">
+                <a th:if="${currentPage > 0}" th:href="@{/users(page=${currentPage - 1}, keyword=${searchKeyword})}"
+                    class="btn btn-secondary">Trước</a>
+
+                <span class="page-info">
+                    Trang <strong th:text="${currentPage + 1}">1</strong> /
+                    <strong th:text="${totalPages}">1</strong>
+                </span>
+
+                <a th:if="${currentPage < totalPages - 1}"
+                    th:href="@{/users(page=${currentPage + 1}, keyword=${searchKeyword})}"
+                    class="btn btn-secondary">Sau</a>
+            </div>
+        </main>
+    </div>
+</body>
+
+</html>
