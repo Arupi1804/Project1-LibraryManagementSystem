@@ -268,11 +268,11 @@ Dự án này được phát triển cho mục đích học tập.
 
 ## 📧 Liên hệ
 
-- **Email:** your-email@example.com
-- **GitHub:** [your-github-username](https://github.com/your-username)
+- **Email:** cuong.nh235285@sis.hust.edu.vn
+- **GitHub:** [Arupi1804](https://github.com/Arupi1804)
 
 ---
 
-**Phát triển bởi:** [Your Name]  
-**Năm:** 2024  
+**Phát triển bởi:** [Arupi1804](https://github.com/Arupi1804)  
+**Năm:** 2026  
 **Version:** 1.0.0
