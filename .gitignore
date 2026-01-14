@@ -23,3 +23,9 @@ Thumbs.db
 
 # Application
 application-local.properties
+
+# Docker
+.env
+.env.local
+docker-compose.override.yml
+mysql-data/

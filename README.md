@@ -56,12 +56,14 @@ Hệ thống quản lý thư viện được xây dựng bằng Spring Boot, cun
 
 ## 📋 Yêu cầu hệ thống
 
-- **Java:** JDK 17 hoặc cao hơn
+- **Java:** JDK 21 hoặc cao hơn
 - **MySQL:** 8.0 hoặc cao hơn
 - **Maven:** 3.9 hoặc cao hơn
 - **IDE:** IntelliJ IDEA / Eclipse / VS Code (khuyến nghị)
 
 ## ⚙️ Cài đặt và Chạy
+
+> 📖 **Hướng dẫn chi tiết cho máy mới**: Xem file [SETUP_GUIDE.md](SETUP_GUIDE.md) để có hướng dẫn đầy đủ từng bước cho cả **Maven** và **Docker**!
 
 ### 1. Clone repository
 ```bash
@@ -97,12 +99,65 @@ mvn clean package
 java -jar target/project1-0.0.1-SNAPSHOT.jar
 ```
 
+
 ### 4. Truy cập ứng dụng
 
 Mở trình duyệt và truy cập:
 ```
 http://localhost:8080
 ```
+
+## 🐳 Triển khai với Docker
+
+### Quick Start
+
+**Yêu cầu:** Docker Desktop đã cài đặt ([Tải về](https://www.docker.com/products/docker-desktop))
+
+```bash
+# 1. Clone repository (nếu chưa có)
+git clone <repository-url>
+cd project1
+
+# 2. Khởi động với Docker Compose
+docker-compose up -d
+
+# 3. Kiểm tra trạng thái
+docker-compose ps
+
+# 4. Truy cập ứng dụng
+# Mở trình duyệt: http://localhost:8080
+```
+
+### Dừng và xóa containers
+
+```bash
+# Dừng containers
+docker-compose stop
+
+# Xóa containers (giữ lại data)
+docker-compose down
+
+# Xóa containers và data (⚠️ mất dữ liệu)
+docker-compose down -v
+```
+
+### Xem logs
+
+```bash
+# Xem logs của tất cả services
+docker-compose logs -f
+
+# Xem logs của app
+docker-compose logs -f app
+```
+
+📖 **Hướng dẫn chi tiết:** Xem file [DOCKER_DEPLOYMENT.md](DOCKER_DEPLOYMENT.md) để biết thêm về:
+- Cấu hình nâng cao
+- Troubleshooting
+- Production deployment
+- Backup & restore
+- Và nhiều hơn nữa...
+
 
 ## 👤 Tài khoản mặc định
 

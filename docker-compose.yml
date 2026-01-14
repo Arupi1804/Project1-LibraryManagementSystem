@@ -1,0 +1,73 @@
+version: '3.8'
+
+services:
+  # MySQL Database Service
+  mysql-db:
+    image: mysql:8.0
+    container_name: library-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: library_db
+      MYSQL_USER: library_user
+      MYSQL_PASSWORD: library_password
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_CHARACTER_SET_SERVER: utf8mb4
+      MYSQL_COLLATION_SERVER: utf8mb4_unicode_ci
+    ports:
+      - "3307:3306" # Map to 3307 to avoid conflict with local MySQL
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - library-network
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot_password" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # Spring Boot Application Service
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: library-app
+    restart: unless-stopped
+    depends_on:
+      mysql-db:
+        condition: service_healthy
+    environment:
+      # Database Configuration
+      DATABASE_URL: jdbc:mysql://mysql-db:3306/library_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+      DB_USERNAME: library_user
+      DB_PASSWORD: library_password
+
+      # Application Configuration
+      SPRING_PROFILES_ACTIVE: docker
+      PORT: 8080
+
+      # JPA Configuration
+      SHOW_SQL: false
+
+      # JVM Options (optional, for production tuning)
+      JAVA_OPTS: -Xmx512m -Xms256m
+    ports:
+      - "8080:8080"
+    networks:
+      - library-network
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/login" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+# Named volumes for data persistence
+volumes:
+  mysql-data:
+    driver: local
+
+# Custom network
+networks:
+  library-network:
+    driver: bridge
